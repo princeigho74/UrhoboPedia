@@ -3743,7 +3743,7 @@ Format as JSON: {"score": 85, "feedback": "Good effort! ..."}`
       </section>
 
       {/* Vocabulary Categories Section */}
-      <section className="py-20 px-4 bg-gradient-to-br from-orange-100 to-pink-100">
+      <section id="vocabulary-section" className="py-20 px-4 bg-gradient-to-br from-orange-100 to-pink-100">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-4xl font-bold text-gray-900 mb-4">Vocabulary Library</h2>
