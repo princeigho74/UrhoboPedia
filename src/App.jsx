@@ -106,6 +106,21 @@ const UrhoboEncyclopedia = () => {
     amount: 0,
     method: 'bank_transfer'
   });
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [authMode, setAuthMode] = useState('signin'); // 'signin' or 'signup'
+  const [authForm, setAuthForm] = useState({
+    name: '',
+    email: '',
+    password: '',
+    confirmPassword: ''
+  });
+  const [user, setUser] = useState({
+    name: 'Guest',
+    email: '',
+    avatar: '👤',
+    joinDate: new Date().toISOString()
+  });
   
   const paymentProviders = {
     stripe: {
@@ -1257,6 +1272,74 @@ Format as JSON: {"score": 85, "feedback": "Good effort! ..."}`
     alert('Referral code copied! Share with friends to earn 20% commission on their subscriptions!');
   };
 
+  const handleAuth = (mode) => {
+    if (mode === 'signin') {
+      // Simulate sign in
+      if (authForm.email && authForm.password) {
+        setIsLoggedIn(true);
+        setUser({
+          name: authForm.email.split('@')[0],
+          email: authForm.email,
+          avatar: authForm.email[0].toUpperCase(),
+          joinDate: new Date().toISOString()
+        });
+        setShowAuthModal(false);
+        setUserPoints(prev => prev + 50);
+        setNotifications(prev => [{
+          id: Date.now(),
+          type: 'achievement',
+          title: 'Welcome Back! 🎉',
+          message: 'You earned 50 bonus points for signing in!',
+          time: 'Just now',
+          read: false
+        }, ...prev]);
+        alert('✅ Sign in successful! Welcome back! +50 points');
+        setAuthForm({ name: '', email: '', password: '', confirmPassword: '' });
+      } else {
+        alert('Please enter email and password');
+      }
+    } else {
+      // Simulate sign up
+      if (authForm.name && authForm.email && authForm.password && authForm.password === authForm.confirmPassword) {
+        setIsLoggedIn(true);
+        setUser({
+          name: authForm.name,
+          email: authForm.email,
+          avatar: authForm.name[0].toUpperCase(),
+          joinDate: new Date().toISOString()
+        });
+        setShowAuthModal(false);
+        setUserPoints(prev => prev + 100);
+        setNotifications(prev => [{
+          id: Date.now(),
+          type: 'achievement',
+          title: 'Welcome to Urhobo Encyclopedia! 🎉',
+          message: 'You earned 100 bonus points for signing up!',
+          time: 'Just now',
+          read: false
+        }, ...prev]);
+        alert('✅ Account created successfully! Welcome! +100 points');
+        setAuthForm({ name: '', email: '', password: '', confirmPassword: '' });
+      } else {
+        alert('Please fill all fields correctly. Passwords must match.');
+      }
+    }
+  };
+
+  const handleLogout = () => {
+    setIsLoggedIn(false);
+    setUser({
+      name: 'Guest',
+      email: '',
+      avatar: '👤',
+      joinDate: new Date().toISOString()
+    });
+    setUserPoints(0);
+    setStreakDays(0);
+    setUserSubscription('free');
+    alert('👋 Logged out successfully!');
+  };
+
   const handleConversationResponse = () => {
     const currentDialogue = conversationDialogues[0].dialogue[conversationStep];
     if (userResponse.toLowerCase().includes(currentDialogue.urhobo.toLowerCase().slice(0, 4))) {
@@ -1288,6 +1371,187 @@ Format as JSON: {"score": 85, "feedback": "Good effort! ..."}`
     { id: 'cultural_explorer', name: 'Culture Enthusiast', icon: '🎭', desc: 'Learned about Urhobo culture', unlocked: selectedStory !== null },
     { id: 'community_member', name: 'Community Star', icon: '⭐', desc: 'Participated in group session', unlocked: groupMessages.some(m => m.user === 'You') }
   ];
+
+  // Auth Modal
+  if (showAuthModal) {
+    return (
+      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-3xl max-w-md w-full shadow-2xl overflow-hidden">
+          {/* Header */}
+          <div className="bg-gradient-to-r from-orange-500 via-red-500 to-pink-600 p-8 text-white relative">
+            <button
+              onClick={() => setShowAuthModal(false)}
+              className="absolute top-4 right-4 w-10 h-10 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center transition-all"
+            >
+              <X className="w-6 h-6" />
+            </button>
+            <div className="text-center">
+              <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                <div className="text-4xl">👤</div>
+              </div>
+              <h2 className="text-3xl font-bold mb-2">
+                {authMode === 'signin' ? 'Welcome Back!' : 'Join Urhobo Encyclopedia'}
+              </h2>
+              <p className="text-orange-100">
+                {authMode === 'signin' ? 'Sign in to continue learning' : 'Create your free account'}
+              </p>
+            </div>
+          </div>
+
+          {/* Form */}
+          <div className="p-8">
+            {/* Toggle Buttons */}
+            <div className="flex gap-2 mb-6">
+              <button
+                onClick={() => setAuthMode('signin')}
+                className={`flex-1 py-3 rounded-xl font-bold transition-all ${
+                  authMode === 'signin'
+                    ? 'bg-gradient-to-r from-orange-500 to-red-600 text-white'
+                    : 'bg-gray-100 text-gray-700'
+                }`}
+              >
+                Sign In
+              </button>
+              <button
+                onClick={() => setAuthMode('signup')}
+                className={`flex-1 py-3 rounded-xl font-bold transition-all ${
+                  authMode === 'signup'
+                    ? 'bg-gradient-to-r from-orange-500 to-red-600 text-white'
+                    : 'bg-gray-100 text-gray-700'
+                }`}
+              >
+                Sign Up
+              </button>
+            </div>
+
+            {/* Form Fields */}
+            <div className="space-y-4">
+              {authMode === 'signup' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
+                  <input
+                    type="text"
+                    value={authForm.name}
+                    onChange={(e) => setAuthForm(prev => ({ ...prev, name: e.target.value }))}
+                    placeholder="Enter your name"
+                    className="w-full p-4 border-2 border-gray-300 rounded-xl focus:border-orange-500 outline-none transition-all"
+                  />
+                </div>
+              )}
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
+                <input
+                  type="email"
+                  value={authForm.email}
+                  onChange={(e) => setAuthForm(prev => ({ ...prev, email: e.target.value }))}
+                  placeholder="your.email@example.com"
+                  className="w-full p-4 border-2 border-gray-300 rounded-xl focus:border-orange-500 outline-none transition-all"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Password</label>
+                <input
+                  type="password"
+                  value={authForm.password}
+                  onChange={(e) => setAuthForm(prev => ({ ...prev, password: e.target.value }))}
+                  placeholder="••••••••"
+                  className="w-full p-4 border-2 border-gray-300 rounded-xl focus:border-orange-500 outline-none transition-all"
+                />
+              </div>
+
+              {authMode === 'signup' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Confirm Password</label>
+                  <input
+                    type="password"
+                    value={authForm.confirmPassword}
+                    onChange={(e) => setAuthForm(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                    placeholder="••••••••"
+                    className="w-full p-4 border-2 border-gray-300 rounded-xl focus:border-orange-500 outline-none transition-all"
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* Benefits (Sign Up) */}
+            {authMode === 'signup' && (
+              <div className="mt-6 bg-orange-50 rounded-xl p-4">
+                <p className="text-sm font-bold text-gray-900 mb-2">What you'll get:</p>
+                <ul className="space-y-1 text-sm text-gray-700">
+                  <li className="flex items-center gap-2">
+                    <Check className="w-4 h-4 text-green-600" />
+                    100 bonus points
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <Check className="w-4 h-4 text-green-600" />
+                    Track your progress
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <Check className="w-4 h-4 text-green-600" />
+                    Earn achievements
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <Check className="w-4 h-4 text-green-600" />
+                    Save your learning
+                  </li>
+                </ul>
+              </div>
+            )}
+
+            {/* Submit Button */}
+            <button
+              onClick={() => handleAuth(authMode)}
+              className="w-full mt-6 py-4 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-xl font-bold text-lg hover:shadow-xl transition-all"
+            >
+              {authMode === 'signin' ? 'Sign In' : 'Create Account'}
+            </button>
+
+            {/* Social Login */}
+            <div className="mt-6">
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-gray-300"></div>
+                </div>
+                <div className="relative flex justify-center text-sm">
+                  <span className="px-2 bg-white text-gray-500">Or continue with</span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 mt-4">
+                <button
+                  onClick={() => alert('Google Sign In - Coming soon!')}
+                  className="flex items-center justify-center gap-2 p-3 border-2 border-gray-300 rounded-xl hover:bg-gray-50 transition-all"
+                >
+                  <div className="text-xl">🔵</div>
+                  <span className="font-medium text-gray-700">Google</span>
+                </button>
+                <button
+                  onClick={() => alert('Facebook Sign In - Coming soon!')}
+                  className="flex items-center justify-center gap-2 p-3 border-2 border-gray-300 rounded-xl hover:bg-gray-50 transition-all"
+                >
+                  <div className="text-xl">📘</div>
+                  <span className="font-medium text-gray-700">Facebook</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <p className="text-center text-sm text-gray-600 mt-6">
+              {authMode === 'signin' ? "Don't have an account? " : "Already have an account? "}
+              <button
+                onClick={() => setAuthMode(authMode === 'signin' ? 'signup' : 'signin')}
+                className="text-orange-600 font-bold hover:text-orange-700"
+              >
+                {authMode === 'signin' ? 'Sign Up' : 'Sign In'}
+              </button>
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // Payment Setup & Withdrawal Screen
   if (showPaymentSetup) {
@@ -3353,12 +3617,72 @@ Format as JSON: {"score": 85, "feedback": "Good effort! ..."}`
                 <Trophy className="w-4 h-4" />
                 <span className="font-bold">{userPoints} pts</span>
               </div>
-              <button 
-                onClick={() => setShowSubscriptionModal(true)}
-                className="px-6 py-2 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-full hover:shadow-lg transition-all hover:scale-105 font-bold"
-              >
-                {userSubscription === 'free' ? 'Upgrade' : 'Manage Plan'}
-              </button>
+              
+              {isLoggedIn ? (
+                <>
+                  <button 
+                    onClick={() => setShowSubscriptionModal(true)}
+                    className="px-6 py-2 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-full hover:shadow-lg transition-all hover:scale-105 font-bold"
+                  >
+                    {userSubscription === 'free' ? 'Upgrade' : 'Manage Plan'}
+                  </button>
+                  <div className="relative group">
+                    <button className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-full transition-all">
+                      <div className="w-8 h-8 bg-gradient-to-r from-orange-500 to-red-600 rounded-full flex items-center justify-center text-white font-bold">
+                        {user.avatar}
+                      </div>
+                      <span className="font-medium text-gray-700">{user.name}</span>
+                    </button>
+                    <div className="absolute right-0 mt-2 w-64 bg-white rounded-2xl shadow-2xl border-2 border-gray-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all">
+                      <div className="p-4">
+                        <p className="font-bold text-gray-900">{user.name}</p>
+                        <p className="text-sm text-gray-600">{user.email}</p>
+                        <div className="mt-3 pt-3 border-t space-y-2">
+                          <button
+                            onClick={() => setShowProgressDashboard(true)}
+                            className="w-full text-left px-3 py-2 hover:bg-gray-50 rounded-lg transition-all"
+                          >
+                            📊 Dashboard
+                          </button>
+                          <button
+                            onClick={() => setShowPaymentSetup(true)}
+                            className="w-full text-left px-3 py-2 hover:bg-gray-50 rounded-lg transition-all"
+                          >
+                            💰 Earnings
+                          </button>
+                          <button
+                            onClick={handleLogout}
+                            className="w-full text-left px-3 py-2 hover:bg-red-50 text-red-600 rounded-lg transition-all"
+                          >
+                            🚪 Log Out
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <button
+                    onClick={() => {
+                      setShowAuthModal(true);
+                      setAuthMode('signin');
+                    }}
+                    className="px-6 py-2 text-gray-700 hover:text-orange-600 transition-colors font-medium"
+                  >
+                    Sign In
+                  </button>
+                  <button 
+                    onClick={() => {
+                      setShowAuthModal(true);
+                      setAuthMode('signup');
+                    }}
+                    className="px-6 py-2 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-full hover:shadow-lg transition-all hover:scale-105 font-bold"
+                  >
+                    Get Started
+                  </button>
+                </>
+              )}
             </div>
 
             <button className="md:hidden" onClick={() => setIsMenuOpen(!isMenuOpen)}>
